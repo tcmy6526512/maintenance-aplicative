@@ -55,6 +55,17 @@ if (process.env.NODE_ENV === 'production') {
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+// Ensure HTML responses are served as UTF-8
+app.use((req, res, next) => {
+    const originalRender = res.render;
+    res.render = function (view, locals, callback) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return originalRender.call(this, view, locals, callback);
+    };
+    next();
+});
+
 app.use(express.static('public'));
 
 // Secure session configuration

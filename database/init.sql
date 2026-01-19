@@ -2,7 +2,9 @@
 -- Mini Website - MySQL Database
 
 -- Create database
-CREATE DATABASE IF NOT EXISTS mini_site_db;
+CREATE DATABASE IF NOT EXISTS mini_site_db
+    DEFAULT CHARACTER SET utf8mb4
+    DEFAULT COLLATE utf8mb4_unicode_ci;
 USE mini_site_db;
 
 -- Users table
