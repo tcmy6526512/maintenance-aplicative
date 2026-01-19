@@ -43,9 +43,15 @@ router.post('/register', async (req, res) => {
             csrfToken: req.csrfToken()
         });
     }
-    if (!password || password.length < 6) {
-        return res.render('register', { 
-            error: 'Password must contain at least 6 characters', 
+    const hasStrongPassword = (value) => {
+        if (typeof value !== 'string') return false;
+        // Min 8, at least 1 upper, 1 lower, 1 digit, 1 special
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(value);
+    };
+
+    if (!hasStrongPassword(password)) {
+        return res.render('register', {
+            error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character',
             success: null,
             csrfToken: req.csrfToken()
         });
@@ -106,28 +112,42 @@ router.get('/login', (req, res) => {
  */
 router.post('/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
-    
-    // DANGER: SQL query vulnerable to SQL injection
-    // An attacker can use: ' OR '1'='1
-    const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
-    
-    db.query(query, (err, results) => {
-        if (err) {
-            return res.render('login', { 
-                error: 'Connection error',
-                csrfToken: req.csrfToken()
-            });
+
+    const genericError = () => res.render('login', {
+        error: 'Identifiants incorrects',
+        csrfToken: req.csrfToken()
+    });
+
+    const query = 'SELECT id, username, password, email FROM users WHERE username = ? LIMIT 1';
+
+    db.query(query, [username], async (err, results) => {
+        if (err || !results || results.length === 0) {
+            return genericError();
         }
-        
-        if (results.length > 0) {
-            // Successful login
-            req.session.user = results[0];
-            res.redirect('/products');
-        } else {
-            res.render('login', { 
-                error: 'Incorrect credentials',
-                csrfToken: req.csrfToken()
+
+        try {
+            const user = results[0];
+            const ok = await bcrypt.compare(password, user.password);
+            if (!ok) {
+                return genericError();
+            }
+
+            // Prevent session fixation: rotate session ID after login
+            req.session.regenerate((regenErr) => {
+                if (regenErr) {
+                    return genericError();
+                }
+
+                req.session.user = {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email
+                };
+
+                res.redirect('/products');
             });
+        } catch (compareErr) {
+            genericError();
         }
     });
 });
