@@ -21,29 +21,35 @@
     <div class="container main-content">
         <h2>Liste des produits</h2>
 
-        <!-- Formulaire d'ajout -->
-        <div class="form-card">
-            <h3>➕ Ajouter un produit</h3>
-            <form action="/products/add" method="POST" class="product-form">
-                <input type="hidden" name="_csrf" value="<%=csrfToken%>">
-                <div class="form-group">
-                    <label for="name">Nom du produit</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
+        <% if (user.role === 'admin') { %>
+            <!-- Formulaire d'ajout -->
+            <div class="form-card">
+                <h3>➕ Ajouter un produit</h3>
+                <form action="/products/add" method="POST" class="product-form">
+                    <input type="hidden" name="_csrf" value="<%=csrfToken%>">
+                    <div class="form-group">
+                        <label for="name">Nom du produit</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
 
-                <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea id="description" name="description" rows="3" required></textarea>
-                </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="3" required></textarea>
+                    </div>
 
-                <div class="form-group">
-                    <label for="price">Prix (€)</label>
-                    <input type="number" id="price" name="price" step="0.01" required>
-                </div>
+                    <div class="form-group">
+                        <label for="price">Prix (€)</label>
+                        <input type="number" id="price" name="price" step="0.01" required>
+                    </div>
 
-                <button type="submit" class="btn btn-success">Ajouter</button>
-            </form>
-        </div>
+                    <button type="submit" class="btn btn-success">Ajouter</button>
+                </form>
+            </div>
+        <% } else { %>
+            <div class="hint-box">
+                <p>🔒 Seul un administrateur peut ajouter, modifier ou supprimer des produits.</p>
+            </div>
+        <% } %>
 
         <!-- Liste des produits -->
         <div class="products-grid">
@@ -56,23 +62,25 @@
                         <p class="product-description"><%=product.description%></p>
                         <p class="product-price"><%=product.price%> €</p>
                         
-                        <!-- Formulaire de modification -->
-                        <details>
-                            <summary class="btn btn-warning btn-sm">Modifier</summary>
-                            <form action="/products/update/<%=product.id%>" method="POST" class="edit-form">
+                        <% if (user.role === 'admin') { %>
+                            <!-- Formulaire de modification -->
+                            <details>
+                                <summary class="btn btn-warning btn-sm">Modifier</summary>
+                                <form action="/products/update/<%=product.id%>" method="POST" class="edit-form">
+                                    <input type="hidden" name="_csrf" value="<%=csrfToken%>">
+                                    <input type="text" name="name" value="<%=product.name%>" required>
+                                    <textarea name="description" required><%=product.description%></textarea>
+                                    <input type="number" name="price" value="<%=product.price%>" step="0.01" required>
+                                    <button type="submit" class="btn btn-warning btn-sm">Enregistrer</button>
+                                </form>
+                            </details>
+                            
+                            <!-- Formulaire de suppression -->
+                            <form action="/products/delete/<%=product.id%>" method="POST" style="display: inline;">
                                 <input type="hidden" name="_csrf" value="<%=csrfToken%>">
-                                <input type="text" name="name" value="<%=product.name%>" required>
-                                <textarea name="description" required><%=product.description%></textarea>
-                                <input type="number" name="price" value="<%=product.price%>" step="0.01" required>
-                                <button type="submit" class="btn btn-warning btn-sm">Enregistrer</button>
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer ce produit?')">Supprimer</button>
                             </form>
-                        </details>
-                        
-                        <!-- Formulaire de suppression -->
-                        <form action="/products/delete/<%=product.id%>" method="POST" style="display: inline;">
-                            <input type="hidden" name="_csrf" value="<%=csrfToken%>">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer ce produit?')">Supprimer</button>
-                        </form>
+                        <% } %>
                     </div>
                 <% }); %>
             <% } %>

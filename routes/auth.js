@@ -56,9 +56,9 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         
         // Use prepared statement to avoid SQL injection
-        const query = 'INSERT INTO users (username, password, email) VALUES (?, ?, ?)';
+        const query = 'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)';
         
-        db.query(query, [username, hashedPassword, email || null], (err) => {
+        db.query(query, [username, hashedPassword, email || null, 'user'], (err) => {
             if (err) {
                 if (err.code === 'ER_DUP_ENTRY') {
                     return res.render('register', { 
@@ -106,26 +106,45 @@ router.get('/login', (req, res) => {
  */
 router.post('/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
-    
-    // DANGER: SQL query vulnerable to SQL injection
-    // An attacker can use: ' OR '1'='1
-    const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
-    
-    db.query(query, (err, results) => {
+
+    const query = 'SELECT id, username, password, email, role FROM users WHERE username = ? LIMIT 1';
+
+    db.query(query, [username], async (err, results) => {
         if (err) {
-            return res.render('login', { 
+            return res.render('login', {
                 error: 'Connection error',
                 csrfToken: req.csrfToken()
             });
         }
-        
-        if (results.length > 0) {
-            // Successful login
-            req.session.user = results[0];
-            res.redirect('/products');
-        } else {
-            res.render('login', { 
+
+        if (!results || results.length === 0) {
+            return res.render('login', {
                 error: 'Incorrect credentials',
+                csrfToken: req.csrfToken()
+            });
+        }
+
+        try {
+            const user = results[0];
+            const ok = await bcrypt.compare(password, user.password);
+            if (!ok) {
+                return res.render('login', {
+                    error: 'Incorrect credentials',
+                    csrfToken: req.csrfToken()
+                });
+            }
+
+            req.session.user = {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            };
+
+            res.redirect('/products');
+        } catch (compareErr) {
+            res.render('login', {
+                error: 'Connection error',
                 csrfToken: req.csrfToken()
             });
         }

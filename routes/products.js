@@ -18,6 +18,16 @@ function requireAuth(req, res, next) {
     next();
 }
 
+function requireAdmin(req, res, next) {
+    if (!req.session.user) {
+        return res.redirect('/auth/login');
+    }
+    if (req.session.user.role !== 'admin') {
+        return res.status(403).send('Forbidden');
+    }
+    next();
+}
+
 /**
  * GET /products - Display product list
  */
@@ -37,7 +47,7 @@ router.get('/', requireAuth, (req, res) => {
 /**
  * POST /products/add - Add a new product
  */
-router.post('/add', requireAuth, (req, res) => {
+router.post('/add', requireAdmin, (req, res) => {
     const { name, description, price } = req.body;
     
     // Data validation
@@ -65,10 +75,7 @@ router.post('/add', requireAuth, (req, res) => {
     });
 });
 
-/**
- * POST /products/update/:id - Update a product
- */
-router.post('/update/:id', requireAuth, (req, res) => {
+router.post('/update/:id', requireAdmin, (req, res) => {
     const { id } = req.params;
     const { name, description, price } = req.body;
     
@@ -102,10 +109,9 @@ router.post('/update/:id', requireAuth, (req, res) => {
 /**
  * POST /products/delete/:id - Delete a product
  */
-router.post('/delete/:id', requireAuth, (req, res) => {
+router.post('/delete/:id', requireAdmin, (req, res) => {
     const { id } = req.params;
     
-    // All logged-in users can delete products (intended behavior)
     db.query('DELETE FROM products WHERE id = ?', [id], (err) => {
         if (err) {
             return res.status(500).send('Error deleting product');
