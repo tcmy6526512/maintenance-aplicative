@@ -20,9 +20,33 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
+    category_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Categories table
+CREATE TABLE IF NOT EXISTS categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    icon VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Foreign key: products -> categories
+ALTER TABLE products
+    ADD CONSTRAINT fk_products_category
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+    ON DELETE SET NULL;
+
+-- Seed categories
+INSERT INTO categories (name, icon) VALUES 
+('Électronique', '💻'),
+('Accessoires', '🖱️'),
+('Périphériques', '⌨️'),
+('Audio', '🎧'),
+('Autre', '📦');
 
 -- Insert test users
 -- Passwords hashed with bcrypt (cost 10)
@@ -32,12 +56,12 @@ INSERT INTO users (username, password, email) VALUES
 ('test', '$2b$10$rBV2L7Z9Z9Z9Z9Z9Z9Z9ZeHxKqV3YJYqXGZqXxXxXxXxe5KqV3YJYa', 'test@example.com');
 
 -- Insert demo products
-INSERT INTO products (name, description, price) VALUES 
-('Laptop', 'High-performance laptop for gaming and work', 899.99),
-('Wireless Mouse', 'Ergonomic mouse with precise optical sensor', 29.99),
-('Mechanical Keyboard', 'RGB gaming keyboard with mechanical switches', 79.99),
-('27-inch Monitor', 'Full HD IPS monitor with 144Hz refresh rate', 299.99),
-('Headphones', 'Bluetooth headphones with active noise cancellation', 159.99);
+INSERT INTO products (name, description, price, category_id) VALUES 
+('Laptop', 'High-performance laptop for gaming and work', 899.99, (SELECT id FROM categories WHERE name = 'Électronique')),
+('Wireless Mouse', 'Ergonomic mouse with precise optical sensor', 29.99, (SELECT id FROM categories WHERE name = 'Accessoires')),
+('Mechanical Keyboard', 'RGB gaming keyboard with mechanical switches', 79.99, (SELECT id FROM categories WHERE name = 'Périphériques')),
+('27-inch Monitor', 'Full HD IPS monitor with 144Hz refresh rate', 299.99, (SELECT id FROM categories WHERE name = 'Périphériques')),
+('Headphones', 'Bluetooth headphones with active noise cancellation', 159.99, (SELECT id FROM categories WHERE name = 'Audio'));
 
 -- Display inserted data
 SELECT 'Users created:' as Info;

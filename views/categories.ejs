@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catégories - Mini Site Web</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>🛒 Mini Site Web</h1>
+            <div class="nav-links">
+                <a href="/">Accueil</a>
+                <a href="/products">Produits</a>
+                <a href="/categories">Catégories</a>
+                <a href="/auth/logout">Déconnexion (<%=user.username%>)</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        <h2>Catégories</h2>
+
+        <div class="form-card">
+            <h3>➕ Ajouter une catégorie</h3>
+            <form action="/categories/add" method="POST" class="product-form">
+                <input type="hidden" name="_csrf" value="<%=csrfToken%>">
+
+                <div class="form-group">
+                    <label for="name">Nom</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="icon">Icône (emoji optionnel)</label>
+                    <input type="text" id="icon" name="icon" placeholder="📦">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success">Ajouter</button>
+            </form>
+            <p style="margin-top: .75rem; opacity: .8;">
+                Note: après le merge de la branche “roles”, l’accès sera limité aux admins.
+            </p>
+        </div>
+
+        <div class="products-grid">
+            <% if (categories.length === 0) { %>
+                <p class="no-products">Aucune catégorie. Ajoutez-en une !</p>
+            <% } else { %>
+                <% categories.forEach(category => { %>
+                    <div class="product-card">
+                        <h3><%= (category.icon ? category.icon + ' ' : '') + category.name %></h3>
+                        <% if (category.description) { %>
+                            <p class="product-description"><%=category.description%></p>
+                        <% } %>
+
+                        <details>
+                            <summary class="btn btn-warning btn-sm">Modifier</summary>
+                            <form action="/categories/update/<%=category.id%>" method="POST" class="edit-form">
+                                <input type="hidden" name="_csrf" value="<%=csrfToken%>">
+                                <input type="text" name="name" value="<%=category.name%>" required>
+                                <input type="text" name="icon" value="<%=category.icon || ''%>" placeholder="📦">
+                                <textarea name="description"><%=category.description || ''%></textarea>
+                                <button type="submit" class="btn btn-warning btn-sm">Enregistrer</button>
+                            </form>
+                        </details>
+
+                        <form action="/categories/delete/<%=category.id%>" method="POST" style="display: inline;">
+                            <input type="hidden" name="_csrf" value="<%=csrfToken%>">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer cette catégorie?')">Supprimer</button>
+                        </form>
+                    </div>
+                <% }); %>
+            <% } %>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 Mini Site Web - Projet de démonstration</p>
+    </footer>
+</body>
+</html>

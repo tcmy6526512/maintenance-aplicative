@@ -22,14 +22,44 @@ function requireAuth(req, res, next) {
  * GET /products - Display product list
  */
 router.get('/', requireAuth, (req, res) => {
-    db.query('SELECT * FROM products ORDER BY id DESC', (err, results) => {
-        if (err) {
+    const categoryId = req.query.category ? parseInt(req.query.category, 10) : null;
+
+    const categoriesQuery = `
+        SELECT c.*, COUNT(p.id) AS product_count
+        FROM categories c
+        LEFT JOIN products p ON p.category_id = c.id
+        GROUP BY c.id
+        ORDER BY c.name ASC
+    `;
+
+    db.query(categoriesQuery, (categoryErr, categories) => {
+        if (categoryErr) {
             return res.status(500).send('Server error');
         }
-        res.render('products', { 
-            products: results,
-            user: req.session.user,
-            csrfToken: req.csrfToken()
+
+        const baseProductsQuery = `
+            SELECT p.*, c.name AS category_name, c.icon AS category_icon
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+        `;
+
+        const productsQuery = Number.isInteger(categoryId)
+            ? baseProductsQuery + ' WHERE p.category_id = ? ORDER BY p.id DESC'
+            : baseProductsQuery + ' ORDER BY p.id DESC';
+
+        const params = Number.isInteger(categoryId) ? [categoryId] : [];
+
+        db.query(productsQuery, params, (err, results) => {
+            if (err) {
+                return res.status(500).send('Server error');
+            }
+            res.render('products', {
+                products: results,
+                categories,
+                activeCategoryId: Number.isInteger(categoryId) ? categoryId : null,
+                user: req.session.user,
+                csrfToken: req.csrfToken()
+            });
         });
     });
 });
@@ -38,7 +68,7 @@ router.get('/', requireAuth, (req, res) => {
  * POST /products/add - Add a new product
  */
 router.post('/add', requireAuth, (req, res) => {
-    const { name, description, price } = req.body;
+    const { name, description, price, category_id } = req.body;
     
     // Data validation
     if (!name || name.trim().length === 0) {
@@ -56,8 +86,11 @@ router.post('/add', requireAuth, (req, res) => {
     const sanitizedDescription = validator.escape(description.trim());
     
     const query = 'INSERT INTO products (name, description, price) VALUES (?, ?, ?)';
-    
-    db.query(query, [sanitizedName, sanitizedDescription, parseFloat(price)], (err) => {
+
+    const categoryId = category_id ? parseInt(category_id, 10) : null;
+    const insertQuery = 'INSERT INTO products (name, description, price, category_id) VALUES (?, ?, ?, ?)';
+
+    db.query(insertQuery, [sanitizedName, sanitizedDescription, parseFloat(price), Number.isInteger(categoryId) ? categoryId : null], (err) => {
         if (err) {
             return res.status(500).send('Database error: ' + err.message);
         }
@@ -70,7 +103,7 @@ router.post('/add', requireAuth, (req, res) => {
  */
 router.post('/update/:id', requireAuth, (req, res) => {
     const { id } = req.params;
-    const { name, description, price } = req.body;
+    const { name, description, price, category_id } = req.body;
     
     // Data validation
     if (!name || name.trim().length === 0) {
@@ -89,9 +122,10 @@ router.post('/update/:id', requireAuth, (req, res) => {
     
     // Convert price to number to ensure proper storage and calculations
     const numericPrice = parseFloat(price);
-    const query = 'UPDATE products SET name = ?, description = ?, price = ? WHERE id = ?';
+    const categoryId = category_id ? parseInt(category_id, 10) : null;
+    const query = 'UPDATE products SET name = ?, description = ?, price = ?, category_id = ? WHERE id = ?';
     
-    db.query(query, [sanitizedName, sanitizedDescription, numericPrice, id], (err) => {
+    db.query(query, [sanitizedName, sanitizedDescription, numericPrice, Number.isInteger(categoryId) ? categoryId : null, id], (err) => {
         if (err) {
             return res.status(500).send('Error updating product');
         }
@@ -119,8 +153,15 @@ router.post('/delete/:id', requireAuth, (req, res) => {
  */
 router.get('/:id', requireAuth, (req, res) => {
     const { id } = req.params;
-    
-    db.query('SELECT * FROM products WHERE id = ?', [id], (err, results) => {
+
+    const query = `
+        SELECT p.*, c.name AS category_name, c.icon AS category_icon
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.id = ?
+    `;
+
+    db.query(query, [id], (err, results) => {
         if (err) {
             return res.status(500).send('Server error');
         }

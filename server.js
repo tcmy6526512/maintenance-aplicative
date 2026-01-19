@@ -42,12 +42,14 @@ app.use(csrfProtection);
 // Import routes
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
+const categoryRoutes = require('./routes/categories');
 const homeRoutes = require('./routes/home');
 
 // Use routes
 app.use('/', homeRoutes);
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
+app.use('/categories', categoryRoutes);
 
 // Start server
 app.listen(PORT, () => {
