@@ -34,6 +34,7 @@
 
             <% if (!success) { %>
                 <form action="/auth/register" method="POST" class="login-form">
+                    <input type="hidden" name="_csrf" value="<%=csrfToken%>">
                     <div class="form-group">
                         <label for="username">Nom d'utilisateur *</label>
                         <input type="text" id="username" name="username" required minlength="3">

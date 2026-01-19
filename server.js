@@ -6,7 +6,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const csrf = require('csurf');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 const PORT = 3000;
@@ -22,15 +24,20 @@ app.use(express.static('public'));
 
 // Secure session configuration
 app.use(session({
-    secret: 'un-secret-tres-long-et-complexe-pour-la-production-2026',
+    secret: process.env.SESSION_SECRET || 'fallback-secret-for-dev-only',
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false,    // In production, set to true with HTTPS
-        httpOnly: true,   // Cookie not accessible via JavaScript (XSS protection)
-        maxAge: 1000 * 60 * 60 * 24 // 24 hours
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24
     }
 }));
+
+// CSRF Protection
+const csrfProtection = csrf({ cookie: false });
+app.use(csrfProtection);
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -44,6 +51,7 @@ app.use('/products', productRoutes);
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server started on http://localhost:${PORT}`);
-    console.log('⚠️  WARNING: This site contains intentional security vulnerabilities!');
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`Server started on http://localhost:${PORT}`);
+    }
 });

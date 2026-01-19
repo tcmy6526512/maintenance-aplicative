@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const validator = require('validator');
 
 /**
  * Middleware to check if user is logged in
@@ -23,12 +24,12 @@ function requireAuth(req, res, next) {
 router.get('/', requireAuth, (req, res) => {
     db.query('SELECT * FROM products ORDER BY id DESC', (err, results) => {
         if (err) {
-            console.error('Error:', err);
             return res.status(500).send('Server error');
         }
         res.render('products', { 
             products: results,
-            user: req.session.user 
+            user: req.session.user,
+            csrfToken: req.csrfToken()
         });
     });
 });
@@ -50,12 +51,15 @@ router.post('/add', requireAuth, (req, res) => {
         return res.status(400).send('Price must be a positive number');
     }
     
+    // Sanitize inputs to prevent XSS
+    const sanitizedName = validator.escape(name.trim());
+    const sanitizedDescription = validator.escape(description.trim());
+    
     const query = 'INSERT INTO products (name, description, price) VALUES (?, ?, ?)';
     
-    db.query(query, [name.trim(), description.trim(), parseFloat(price)], (err) => {
+    db.query(query, [sanitizedName, sanitizedDescription, parseFloat(price)], (err) => {
         if (err) {
-            console.error('Error:', err);
-            return res.status(500).send('Error adding product');
+            return res.status(500).send('Database error: ' + err.message);
         }
         res.redirect('/products');
     });
@@ -63,7 +67,6 @@ router.post('/add', requireAuth, (req, res) => {
 
 /**
  * POST /products/update/:id - Update a product
- * INTENTIONAL BUG: Price is not properly converted to a number
  */
 router.post('/update/:id', requireAuth, (req, res) => {
     const { id } = req.params;
@@ -80,13 +83,16 @@ router.post('/update/:id', requireAuth, (req, res) => {
         return res.status(400).send('Price must be a positive number');
     }
     
-    // BUG: Price should be converted to a number, but it remains a string
-    // This can cause calculation problems later
+    // Sanitize inputs to prevent XSS
+    const sanitizedName = validator.escape(name.trim());
+    const sanitizedDescription = validator.escape(description.trim());
+    
+    // Convert price to number to ensure proper storage and calculations
+    const numericPrice = parseFloat(price);
     const query = 'UPDATE products SET name = ?, description = ?, price = ? WHERE id = ?';
     
-    db.query(query, [name.trim(), description.trim(), price, id], (err) => {
+    db.query(query, [sanitizedName, sanitizedDescription, numericPrice, id], (err) => {
         if (err) {
-            console.error('Error:', err);
             return res.status(500).send('Error updating product');
         }
         res.redirect('/products');
@@ -102,7 +108,6 @@ router.post('/delete/:id', requireAuth, (req, res) => {
     // All logged-in users can delete products (intended behavior)
     db.query('DELETE FROM products WHERE id = ?', [id], (err) => {
         if (err) {
-            console.error('Error:', err);
             return res.status(500).send('Error deleting product');
         }
         res.redirect('/products');
@@ -117,7 +122,6 @@ router.get('/:id', requireAuth, (req, res) => {
     
     db.query('SELECT * FROM products WHERE id = ?', [id], (err, results) => {
         if (err) {
-            console.error('Error:', err);
             return res.status(500).send('Server error');
         }
         
@@ -127,7 +131,8 @@ router.get('/:id', requireAuth, (req, res) => {
         
         res.render('product-detail', { 
             product: results[0],
-            user: req.session.user 
+            user: req.session.user,
+            csrfToken: req.csrfToken()
         });
     });
 });

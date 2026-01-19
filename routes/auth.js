@@ -7,12 +7,26 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiter for login attempts
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: 'Too many login attempts. Please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 /**
  * GET /auth/register - Display registration form
  */
 router.get('/register', (req, res) => {
-    res.render('register', { error: null, success: null });
+    res.render('register', { 
+        error: null, 
+        success: null,
+        csrfToken: req.csrfToken()
+    });
 });
 
 /**
@@ -25,13 +39,15 @@ router.post('/register', async (req, res) => {
     if (!username || username.trim().length < 3) {
         return res.render('register', { 
             error: 'Username must contain at least 3 characters', 
-            success: null 
+            success: null,
+            csrfToken: req.csrfToken()
         });
     }
     if (!password || password.length < 6) {
         return res.render('register', { 
             error: 'Password must contain at least 6 characters', 
-            success: null 
+            success: null,
+            csrfToken: req.csrfToken()
         });
     }
     
@@ -44,30 +60,32 @@ router.post('/register', async (req, res) => {
         
         db.query(query, [username, hashedPassword, email || null], (err) => {
             if (err) {
-                console.error('SQL Error:', err);
                 if (err.code === 'ER_DUP_ENTRY') {
                     return res.render('register', { 
                         error: 'This username already exists', 
-                        success: null 
+                        success: null,
+                        csrfToken: req.csrfToken()
                     });
                 }
                 return res.render('register', { 
                     error: 'Error creating account', 
-                    success: null 
+                    success: null,
+                    csrfToken: req.csrfToken()
                 });
             }
             
             // Account created successfully
             res.render('register', { 
                 error: null, 
-                success: 'Account created successfully! You can now log in.' 
+                success: 'Account created successfully! You can now log in.',
+                csrfToken: req.csrfToken()
             });
         });
     } catch (error) {
-        console.error('Hashing error:', error);
         res.render('register', { 
             error: 'Error creating account', 
-            success: null 
+            success: null,
+            csrfToken: req.csrfToken()
         });
     }
 });
@@ -76,26 +94,29 @@ router.post('/register', async (req, res) => {
  * GET /auth/login - Display login form
  */
 router.get('/login', (req, res) => {
-    res.render('login', { error: null });
+    res.render('login', { 
+        error: null,
+        csrfToken: req.csrfToken()
+    });
 });
 
 /**
  * POST /auth/login - Process login
  * SECURITY VULNERABILITY #3: SQL Injection possible!
  */
-router.post('/login', (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
     
     // DANGER: SQL query vulnerable to SQL injection
     // An attacker can use: ' OR '1'='1
     const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
     
-    console.log('SQL Query:', query); // Log for demonstration
-    
     db.query(query, (err, results) => {
         if (err) {
-            console.error('SQL Error:', err);
-            return res.render('login', { error: 'Connection error' });
+            return res.render('login', { 
+                error: 'Connection error',
+                csrfToken: req.csrfToken()
+            });
         }
         
         if (results.length > 0) {
@@ -103,7 +124,10 @@ router.post('/login', (req, res) => {
             req.session.user = results[0];
             res.redirect('/products');
         } else {
-            res.render('login', { error: 'Incorrect credentials' });
+            res.render('login', { 
+                error: 'Incorrect credentials',
+                csrfToken: req.csrfToken()
+            });
         }
     });
 });

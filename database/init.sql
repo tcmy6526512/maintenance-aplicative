@@ -26,9 +26,6 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Insert test users
 -- Passwords hashed with bcrypt (cost 10)
--- admin : admin123
--- user : user123  
--- test : test123
 INSERT INTO users (username, password, email) VALUES 
 ('admin', '$2b$10$rBV2L7Z9Z9Z9Z9Z9Z9Z9ZeHxKqV3YJYqXGZqXxXxXxXxe5KqV3YJYa', 'admin@example.com'),
 ('user', '$2b$10$rBV2L7Z9Z9Z9Z9Z9Z9Z9ZeHxKqV3YJYqXGZqXxXxXxXxe5KqV3YJYa', 'user@example.com'),

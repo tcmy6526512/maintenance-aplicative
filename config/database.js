@@ -18,10 +18,15 @@ const connection = mysql.createConnection({
  */
 connection.connect((err) => {
     if (err) {
-        console.error('Database connection error:', err);
+        // Log error in development only
+        if (process.env.NODE_ENV !== 'production') {
+            console.error('Database connection failed');
+        }
         return;
     }
-    console.log('Connected to MySQL database');
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('Connected to MySQL database');
+    }
 });
 
 module.exports = connection;

@@ -25,6 +25,7 @@
         <div class="form-card">
             <h3>➕ Ajouter un produit</h3>
             <form action="/products/add" method="POST" class="product-form">
+                <input type="hidden" name="_csrf" value="<%=csrfToken%>">
                 <div class="form-group">
                     <label for="name">Nom du produit</label>
                     <input type="text" id="name" name="name" required>
@@ -59,6 +60,7 @@
                         <details>
                             <summary class="btn btn-warning btn-sm">Modifier</summary>
                             <form action="/products/update/<%=product.id%>" method="POST" class="edit-form">
+                                <input type="hidden" name="_csrf" value="<%=csrfToken%>">
                                 <input type="text" name="name" value="<%=product.name%>" required>
                                 <textarea name="description" required><%=product.description%></textarea>
                                 <input type="number" name="price" value="<%=product.price%>" step="0.01" required>
@@ -68,6 +70,7 @@
                         
                         <!-- Formulaire de suppression -->
                         <form action="/products/delete/<%=product.id%>" method="POST" style="display: inline;">
+                            <input type="hidden" name="_csrf" value="<%=csrfToken%>">
                             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer ce produit?')">Supprimer</button>
                         </form>
                     </div>

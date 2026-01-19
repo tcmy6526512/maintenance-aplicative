@@ -11,7 +11,8 @@ const router = express.Router();
  */
 router.get('/', (req, res) => {
     res.render('index', { 
-        user: req.session.user || null 
+        user: req.session.user || null,
+        csrfToken: req.csrfToken()
     });
 });
 
