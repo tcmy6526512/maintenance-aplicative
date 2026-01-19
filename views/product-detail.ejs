@@ -24,6 +24,9 @@
         <div class="product-detail">
             <h2><%=product.name%></h2>
             <div class="detail-info">
+                <% if (product.category_name) { %>
+                    <p><strong>Catégorie:</strong> <%= (product.category_icon ? product.category_icon + ' ' : '') + product.category_name %></p>
+                <% } %>
                 <p><strong>Description:</strong></p>
                 <p><%=product.description%></p>
                 <p class="price-large"><%=product.price%> €</p>
