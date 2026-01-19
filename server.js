@@ -81,6 +81,11 @@ const homeRoutes = require('./routes/home');
 
 // Use routes
 app.use('/', homeRoutes);
+
+// Convenience aliases
+app.get('/login', (req, res) => res.redirect('/auth/login'));
+app.get('/register', (req, res) => res.redirect('/auth/register'));
+
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 

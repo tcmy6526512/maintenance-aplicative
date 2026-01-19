@@ -62,9 +62,9 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         
         // Use prepared statement to avoid SQL injection
-        const query = 'INSERT INTO users (username, password, email) VALUES (?, ?, ?)';
+        const query = 'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)';
         
-        db.query(query, [username, hashedPassword, email || null], (err) => {
+        db.query(query, [username, hashedPassword, email || null, 'user'], (err) => {
             if (err) {
                 if (err.code === 'ER_DUP_ENTRY') {
                     return res.render('register', { 
@@ -118,7 +118,7 @@ router.post('/login', loginLimiter, (req, res) => {
         csrfToken: req.csrfToken()
     });
 
-    const query = 'SELECT id, username, password, email FROM users WHERE username = ? LIMIT 1';
+    const query = 'SELECT id, username, password, email, role FROM users WHERE username = ? LIMIT 1';
 
     db.query(query, [username], async (err, results) => {
         if (err || !results || results.length === 0) {
@@ -141,7 +141,8 @@ router.post('/login', loginLimiter, (req, res) => {
                 req.session.user = {
                     id: user.id,
                     username: user.username,
-                    email: user.email
+                    email: user.email,
+                    role: user.role
                 };
 
                 res.redirect('/products');
