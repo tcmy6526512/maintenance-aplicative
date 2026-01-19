@@ -54,9 +54,9 @@ INSERT INTO categories (name, icon) VALUES
 -- Insert test users
 -- Passwords hashed with bcrypt (cost 10)
 INSERT INTO users (username, password, email, role) VALUES 
-('admin', '$2b$10$rBV2L7Z9Z9Z9Z9Z9Z9Z9ZeHxKqV3YJYqXGZqXxXxXxXxe5KqV3YJYa', 'admin@example.com', 'admin'),
-('user', '$2b$10$rBV2L7Z9Z9Z9Z9Z9Z9Z9ZeHxKqV3YJYqXGZqXxXxXxXxe5KqV3YJYa', 'user@example.com', 'user'),
-('test', '$2b$10$rBV2L7Z9Z9Z9Z9Z9Z9Z9ZeHxKqV3YJYqXGZqXxXxXxXxe5KqV3YJYa', 'test@example.com', 'user');
+('admin', '$2b$10$PuVWL3sSHxg5co6Pb6L4gOCTr14eDgOICffn0UfEYl03MwmcRKPci', 'admin@example.com', 'admin'),
+('user', '$2b$10$HZOkKRDXZdr79jrEPUHqEOycFi4w5qIxMqVlIWG3/ppsEdXztWJCG', 'user@example.com', 'user'),
+('test', '$2b$10$ylv1njfioLGbtE26F7jYRe97U3O8AMbG7Bc.9E3xy.e/XLrbvSLri', 'test@example.com', 'user');
 
 -- Insert demo products
 INSERT INTO products (name, description, price, category_id) VALUES 
